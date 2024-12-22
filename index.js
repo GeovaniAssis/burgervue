@@ -10,11 +10,6 @@ const port = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-server.register(cors, {
-    origin: "https://geovaniassis.dev.br",
-    methods: ["GET", "POST", "DELETE", "PUT", "OPTIONS"],
-});
-
 // Conexão com o banco
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -43,6 +38,16 @@ app.get('/burgers', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).send('Erro ao buscar burgers');
+    }
+});
+
+app.get('/status', async (req, res) => {
+    try {
+        const status = await pool.query('SELECT * FROM status');
+        res.json(status.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erro ao buscar status');
     }
 });
 
