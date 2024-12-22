@@ -31,16 +31,6 @@ app.get('/ingredientes', async (req, res) => {
     }
 });
 
-app.get('/burgers', async (req, res) => {
-    try {
-        const burgers = await pool.query('SELECT * FROM burgers');
-        res.json(burgers.rows);
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Erro ao buscar burgers');
-    }
-});
-
 app.get('/status', async (req, res) => {
     try {
         const status = await pool.query('SELECT * FROM status');
@@ -48,6 +38,16 @@ app.get('/status', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).send('Erro ao buscar status');
+    }
+});
+
+app.get('/burgers', async (req, res) => {
+    try {
+        const burgers = await pool.query('SELECT * FROM burgers');
+        res.json(burgers.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erro ao buscar burgers');
     }
 });
 
@@ -65,23 +65,61 @@ app.post('/burgers', async (req, res) => {
     }
 });
 
-app.put('/burgers/:id', async (req, res) => {
+app.patch('/burgers/:id', async (req, res) => {
     const { id } = req.params;
     const { nome, pao, carne, opcional, bebida, batata, status } = req.body;
+
     try {
-        const burgerAtualizado = await pool.query(
-            'UPDATE burgers SET nome = $1, pao = $2, carne = $3, opcional = $4, bebida = $5, batata = $6, status = $7 WHERE id = $8 RETURNING *',
-            [nome, pao, carne, opcional, bebida, batata, status, id]
-        );
+        // Atualiza apenas os campos enviados no body
+        const camposAtualizados = [];
+        const valoresAtualizados = [];
+        let contador = 1;
+
+        if (nome !== undefined) {
+            camposAtualizados.push(`nome = $${contador++}`);
+            valoresAtualizados.push(nome);
+        }
+        if (pao !== undefined) {
+            camposAtualizados.push(`pao = $${contador++}`);
+            valoresAtualizados.push(pao);
+        }
+        if (carne !== undefined) {
+            camposAtualizados.push(`carne = $${contador++}`);
+            valoresAtualizados.push(carne);
+        }
+        if (opcional !== undefined) {
+            camposAtualizados.push(`opcional = $${contador++}`);
+            valoresAtualizados.push(opcional);
+        }
+        if (bebida !== undefined) {
+            camposAtualizados.push(`bebida = $${contador++}`);
+            valoresAtualizados.push(bebida);
+        }
+        if (batata !== undefined) {
+            camposAtualizados.push(`batata = $${contador++}`);
+            valoresAtualizados.push(batata);
+        }
+        if (status !== undefined) {
+            camposAtualizados.push(`status = $${contador++}`);
+            valoresAtualizados.push(status);
+        }
+
+        valoresAtualizados.push(id);
+
+        const query = `UPDATE burgers SET ${camposAtualizados.join(', ')} WHERE id = $${contador} RETURNING *`;
+        const burgerAtualizado = await pool.query(query, valoresAtualizados);
+
         if (burgerAtualizado.rows.length === 0) {
             return res.status(404).send('Pedido não encontrado');
         }
+
         res.json(burgerAtualizado.rows[0]);
     } catch (error) {
         console.error(error);
         res.status(500).send('Erro ao atualizar pedido');
     }
 });
+
 
 app.delete('/burgers/:id', async (req, res) => {
     const { id } = req.params;
