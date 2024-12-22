@@ -60,8 +60,37 @@ app.post('/burgers', async (req, res) => {
     }
 });
 
+app.put('/burgers/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nome, pao, carne, opcional, bebida, batata, status } = req.body;
+    try {
+        const burgerAtualizado = await pool.query(
+            'UPDATE burgers SET nome = $1, pao = $2, carne = $3, opcional = $4, bebida = $5, batata = $6, status = $7 WHERE id = $8 RETURNING *',
+            [nome, pao, carne, opcional, bebida, batata, status, id]
+        );
+        if (burgerAtualizado.rows.length === 0) {
+            return res.status(404).send('Pedido não encontrado');
+        }
+        res.json(burgerAtualizado.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erro ao atualizar pedido');
+    }
+});
 
-
+app.delete('/burgers/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const resultado = await pool.query('DELETE FROM burgers WHERE id = $1 RETURNING *', [id]);
+        if (resultado.rows.length === 0) {
+            return res.status(404).send('Pedido não encontrado');
+        }
+        res.send('Pedido deletado com sucesso');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erro ao deletar pedido');
+    }
+});
 
 
 // Inicia o servidor
