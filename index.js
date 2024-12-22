@@ -10,6 +10,11 @@ const port = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
+server.register(cors, {
+    origin: "https://geovaniassis.dev.br",
+    methods: ["GET", "POST", "DELETE", "PUT", "OPTIONS"],
+});
+
 // Conexão com o banco
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -40,6 +45,24 @@ app.get('/burgers', async (req, res) => {
         res.status(500).send('Erro ao buscar burgers');
     }
 });
+
+app.post('/burgers', async (req, res) => {
+    const { nome, pao, carne, opcional, bebida, batata, status } = req.body;
+    try {
+        const novoBurger = await pool.query(
+            'INSERT INTO burgers (nome, pao, carne, opcional, bebida, batata, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [nome, pao, carne, opcional, bebida, batata, status]
+        );
+        res.status(201).json(novoBurger.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erro ao criar pedido');
+    }
+});
+
+
+
+
 
 // Inicia o servidor
 app.listen(port, () => {
